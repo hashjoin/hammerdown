@@ -1,0 +1,63 @@
+# golangci-lint v2 configuration. Run locally with `make lint` / `make fmt`;
+# CI runs the same version (see .github/workflows/ci.yml).
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+formatters:
+  enable:
+    - gofumpt    # stricter gofmt: one canonical layout regardless of editor
+    - goimports  # import grouping: stdlib, third party, this module
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/hashjoin/hammerdown
+
+linters:
+  default: standard  # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    - copyloopvar   # pointless loop variable copies (Go 1.22+)
+    - errorlint     # wrap with %w, compare with errors.Is/As
+    - gocritic      # common bugs and style issues
+    - gosec         # security footguns
+    - misspell      # US spelling in comments and strings
+    - nolintlint    # every //nolint must be specific and explained
+    - revive        # golint successor: exported docs, naming, error strings
+    - unconvert     # unnecessary type conversions
+    - unparam       # unused or always-constant parameters
+    - usestdlibvars # use stdlib constants instead of literals
+
+  settings:
+    misspell:
+      locale: US
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    gosec:
+      excludes:
+        - G204  # subprocess with variable args: the shell backend runs operator-supplied commands by design
+        - G304  # file path from variable: state/lock/inventory paths come from operator flags
+        - G301  # dir perms 0755: lock and state dirs are not secrets
+        - G306  # file perms 0644: sim state and lock records are not secrets
+
+  exclusions:
+    presets:
+      - comments
+      - std-error-handling
+      - common-false-positives
+    rules:
+      # tests prefer readable fakes over tidy signatures
+      - path: _test\.go
+        linters:
+          - gosec
+          - unparam
+      - path: _test\.go
+        linters:
+          - revive
+        text: "unused-parameter"
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

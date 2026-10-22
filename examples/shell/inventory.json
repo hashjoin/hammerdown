@@ -1,0 +1,8 @@
+[
+  {"name": "db1", "host": "db1.example.internal", "keyspace": "orders", "shard": "-80", "cell": "az1", "role": "primary", "state": "RestartWait", "running": "8.0.39", "target": "8.0.40"},
+  {"name": "db2", "host": "db2.example.internal", "keyspace": "orders", "shard": "-80", "cell": "az2", "role": "replica", "state": "RestartWait", "running": "8.0.39", "target": "8.0.40"},
+  {"name": "db3", "host": "db3.example.internal", "keyspace": "orders", "shard": "-80", "cell": "az3", "role": "replica", "state": "RestartWait", "running": "8.0.39", "target": "8.0.40"},
+  {"name": "db4", "host": "db4.example.internal", "keyspace": "orders", "shard": "80-", "cell": "az2", "role": "primary", "state": "RestartWait", "running": "8.0.39", "target": "8.0.40"},
+  {"name": "db5", "host": "db5.example.internal", "keyspace": "orders", "shard": "80-", "cell": "az3", "role": "replica", "state": "RestartWait", "running": "8.0.39", "target": "8.0.40"},
+  {"name": "db6", "host": "db6.example.internal", "keyspace": "orders", "shard": "80-", "cell": "az1", "role": "replica", "state": "RestartWait", "running": "8.0.39", "target": "8.0.40"}
+]
