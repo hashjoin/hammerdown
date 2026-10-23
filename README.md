@@ -2,7 +2,6 @@
 
 [![ci](https://github.com/hashjoin/hammerdown/actions/workflows/ci.yml/badge.svg)](https://github.com/hashjoin/hammerdown/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/hashjoin/hammerdown.svg)](https://pkg.go.dev/github.com/hashjoin/hammerdown)
-[![Go Report Card](https://goreportcard.com/badge/github.com/hashjoin/hammerdown)](https://goreportcard.com/report/github.com/hashjoin/hammerdown)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 **Put the hammer down. Keep the brakes.**
