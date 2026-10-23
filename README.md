@@ -1,4 +1,9 @@
-# hammerdown
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/hammerdown-logo-dark.svg">
+    <img alt="hammerdown" src="docs/logo/hammerdown-logo-light.svg" width="440">
+  </picture>
+</h1>
 
 [![ci](https://github.com/hashjoin/hammerdown/actions/workflows/ci.yml/badge.svg)](https://github.com/hashjoin/hammerdown/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/hashjoin/hammerdown.svg)](https://pkg.go.dev/github.com/hashjoin/hammerdown)
