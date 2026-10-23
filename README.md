@@ -29,11 +29,32 @@ replica failures:   0
 
 ## Where it comes from
 
-The design is a clean-room rewrite of the patterns behind a control plane
-that upgraded a Vitess fleet of ~11,000 tablets at Slack across versions,
-taking a full fleet roll from more than two days to about 35 minutes. No code
-was copied. What carried over are the lessons that matter when the fleet is
-big and the pager is real:
+The pattern is older than most of today's tooling. Oracle E-Business Suite
+DBAs know it from `adpatch` and `adadmin`: tell it how many parallel workers
+to run, let it hand out the jobs, watch and steer the workers from `adctrl`,
+and when something breaks, fix it and run the same command again. It picks up
+where it left off.
+
+hammerdown's author has rebuilt that shape for every fleet he has run since:
+Oracle Applications first, then InVision (a Kubernetes-based data migrator
+that moved customers into private clouds, phase by phase), Auth0 (`fleet`, a
+database provisioner behind US patent 11,693,748) and Slack.
+The most recent
+iteration rolled a ~11,000-node Vitess fleet onto a new version in about 35
+minutes, down from more than two days. hammerdown is a clean, generic rewrite
+of the pattern, not any employer's code.
+
+| adpatch / adadmin | hammerdown |
+|---|---|
+| "Number of parallel workers" prompt | `--workers 64` |
+| `adctrl` worker status | `report`, and `worker=NN` on every log line |
+| `adctrl`: tell workers to quit | Ctrl-C drains: in-flight work finishes, nothing new starts |
+| "Continue with your previous session?" | run the same command again to resume |
+| `apply=n` test mode | `--dry-run`, on by default |
+| defaults file for unattended runs | flags plus `--yes` |
+
+What carried over are the rules that matter when the fleet is big and the
+pager is real:
 
 - **The operator drives.** A CLI, not a pipeline: you choose the slice, the
   speed and the stopping point, and you can see everything it will do first.

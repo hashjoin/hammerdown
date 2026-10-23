@@ -122,7 +122,7 @@ func (b *be) Restart(ctx context.Context, n *fleet.Node) error { ... }
 // backup; check replication lag on the candidate before a failover.
 ```
 
-Lessons from running this at ~11,000 tablets:
+Lessons from running this pattern on a ~11,000-tablet fleet:
 
 - **Use a planned reparent and wait for demotion.** Never restart the old
   primary until topology says it is a replica.
