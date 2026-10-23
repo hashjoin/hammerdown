@@ -6,6 +6,8 @@
 
 **Put the hammer down. Keep the brakes.**
 
+![hammerdown: fail-fast stops an 11,000-node roll on the first bad failover, then resumes](docs/demo.gif)
+
 `hammerdown` is a CLI control plane for rolling restarts and upgrades across
 large sharded fleets. It is a small, dependency-free Go codebase you fork and
 make your own: point it at your inventory, teach it two verbs (restart a

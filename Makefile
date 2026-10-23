@@ -55,7 +55,7 @@ demo-record: build ## record demo-play: docs/demo.cast -> demo.gif (README) -> d
 	mkdir -p docs
 	asciinema rec --overwrite --idle-time-limit 2 -c scripts/demo.sh docs/demo.cast
 	agg --speed 1.5 --font-size 16 docs/demo.cast docs/demo.gif
-	ffmpeg -y -loglevel error -i docs/demo.gif -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" docs/demo.mp4
+	ffmpeg -y -loglevel error -i docs/demo.gif -movflags faststart -pix_fmt yuv420p -vf "fps=10,scale=trunc(iw/2)*2:trunc(ih/2)*2" docs/demo.mp4
 	@ls -lh docs/demo.*
 
 clean: ## remove bin/ and the sim fleet
