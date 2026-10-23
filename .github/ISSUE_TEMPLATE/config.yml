@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/hashjoin/hammerdown/discussions
+    about: Ask how to run hammerdown against your fleet, or share how you do.
+  - name: Report a vulnerability
+    url: https://github.com/hashjoin/hammerdown/security/advisories/new
+    about: Please report security issues privately.

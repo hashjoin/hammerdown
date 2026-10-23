@@ -1,0 +1,37 @@
+name: Backend proposal
+description: Teach hammerdown about a new system (Patroni, Redis Cluster, MongoDB, Kafka, Kubernetes ...)
+labels: [backend]
+body:
+  - type: input
+    id: system
+    attributes:
+      label: System
+      placeholder: PostgreSQL + Patroni 3.x
+    validations:
+      required: true
+  - type: textarea
+    id: inventory
+    attributes:
+      label: Inventory - how do you list nodes, roles and versions today?
+    validations:
+      required: true
+  - type: textarea
+    id: restart
+    attributes:
+      label: Restart - how is a node restarted, and how do you know it's healthy?
+    validations:
+      required: true
+  - type: textarea
+    id: failover
+    attributes:
+      label: Failover - how is a planned failover done, and how do you confirm demotion?
+  - type: textarea
+    id: locks
+    attributes:
+      label: Locks - what lock does your other automation respect?
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd like to build this (the add-backend skill in .claude/ can help)

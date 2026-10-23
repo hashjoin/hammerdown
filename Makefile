@@ -6,7 +6,7 @@ GOLANGCI_VERSION := 2.15
 GOLANGCI         := $(shell command -v golangci-lint 2>/dev/null)
 
 .DEFAULT_GOAL := help
-.PHONY: help build test lint fmt check-linter demo demo-failfast demo-play demo-record clean
+.PHONY: help build test fuzz lint fmt check-linter demo demo-failfast demo-play demo-record clean
 
 help: ## list available targets
 	@echo "hammerdown - make targets:"
@@ -18,6 +18,9 @@ build: ## build bin/hammerdown
 test: ## go vet + race tests
 	go vet ./...
 	go test -race ./...
+
+fuzz: ## fuzz the --limit/--skip parser for 30s
+	go test -run='^$$' -fuzz=FuzzParseSpec -fuzztime=30s ./filter
 
 lint: check-linter ## golangci-lint: formatting + linters (same as CI)
 	golangci-lint run ./...

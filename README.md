@@ -1,5 +1,10 @@
 # hammerdown
 
+[![ci](https://github.com/hashjoin/hammerdown/actions/workflows/ci.yml/badge.svg)](https://github.com/hashjoin/hammerdown/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/hashjoin/hammerdown.svg)](https://pkg.go.dev/github.com/hashjoin/hammerdown)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hashjoin/hammerdown)](https://goreportcard.com/report/github.com/hashjoin/hammerdown)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 **Put the hammer down. Keep the brakes.**
 
 `hammerdown` is a CLI control plane for rolling restarts and upgrades across
@@ -73,6 +78,7 @@ pager is real:
 
 ```sh
 go install github.com/hashjoin/hammerdown/cmd/hammerdown@latest
+# or grab a prebuilt binary (macOS / Linux, amd64 / arm64) from Releases
 
 hammerdown sim init                      # 11,000 simulated nodes on v19.0.4
 hammerdown sim stage --to v20.0.1        # "deploy" a build: nodes go RestartWait

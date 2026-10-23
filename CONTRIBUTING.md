@@ -15,6 +15,18 @@ are the most welcome.
 - War stories as issues: "this is how a roll went wrong for us" makes the
   defaults better for everyone.
 
+## How to propose a change
+
+1. **Small fix?** Open a PR directly.
+2. **New feature, backend or changed default?** Open an issue first (there
+   are templates for features and backends) so we can agree on the shape
+   before you write code.
+3. **Questions, "how do I run this against X"?** Use Discussions.
+4. Look for issues labelled `good first issue` or `help wanted`.
+
+Every PR runs lint, race tests, a vulnerability scan and the 11,000-node
+demo in CI. Add yourself to `AUTHORS` in your first PR.
+
 ## Ground rules
 
 - `make fmt lint test` must pass. CI runs the same golangci-lint version
@@ -31,7 +43,19 @@ are the most welcome.
   in the PR description.
 - Using Claude or another assistant is fine; you own the result.
 
+## Security
+
+Please report vulnerabilities privately; see [SECURITY.md](SECURITY.md).
+This project follows the [code of conduct](CODE_OF_CONDUCT.md).
+
 ## Releasing
 
-Tags are `vMAJOR.MINOR.PATCH`. Build with
-`go build -ldflags "-X main.version=$(git describe --tags)" ./cmd/hammerdown`.
+Tags are `vMAJOR.MINOR.PATCH`. Pushing a tag is the whole release:
+
+```sh
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+`.github/workflows/release.yml` runs the tests, cross-compiles macOS and
+Linux binaries (amd64 and arm64), and publishes a GitHub release with
+checksums and auto-generated notes. Don't create the release by hand first.

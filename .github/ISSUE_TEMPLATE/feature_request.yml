@@ -1,0 +1,22 @@
+name: Feature request
+description: A filter, guard, report or safety knob you wish hammerdown had
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The operational problem
+      description: What were you doing, at what scale, and what got in the way? War stories welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you'd like
+      description: Flags, output, behaviour. A sketch of the command line helps.
+      render: shell
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety impact
+      description: Does this change a default, the dry-run guarantee, locking or fail-fast? (See CLAUDE.md invariants.)

@@ -1,0 +1,48 @@
+name: Bug report
+description: Something hammerdown did (or didn't do) that it shouldn't have
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. Please **redact hostnames, IPs, credentials and customer names** from logs.
+        Security issues: do not file them here, see SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: hammerdown version
+      description: Output of `hammerdown version`
+      placeholder: v0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Backend
+      options: [sim, shell, custom / your own]
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command you ran
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output (redacted)
+      render: text
+  - type: checkboxes
+    id: dry
+    attributes:
+      label: Dry run
+      options:
+        - label: I can reproduce this with `--dry-run` (the default) or the `sim` backend
