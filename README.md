@@ -51,8 +51,10 @@ Oracle Applications first, then InVision (a Kubernetes-based data migrator
 that moved customers into private clouds, phase by phase), Auth0 (`fleet`, a
 database provisioner behind US patent 11,693,748) and Slack.
 The most recent
-iteration rolled a ~11,000-node Vitess fleet onto a new version in about 35
-minutes, down from more than two days. hammerdown is a clean, generic rewrite
+iteration can roll a ~11,000-node Vitess fleet in about 35 minutes when
+nothing else holds it back, versus more than two days with the tooling it
+replaced. Real upgrades run slower on purpose: SLAs, schema migrations and
+change freezes set the pace, not the tool. hammerdown is a clean, generic rewrite
 of the pattern, not any employer's code.
 
 | adpatch / adadmin | hammerdown |
