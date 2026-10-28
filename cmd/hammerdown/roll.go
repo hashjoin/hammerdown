@@ -22,6 +22,11 @@ the demoted primary. Dry run unless --dry-run=false.
 
 Ctrl-C once: drain (in-flight node operations finish, nothing new starts).
 Ctrl-C twice: abort in-flight operations. Three times: exit immediately.
+A hangup (the SSH session drops) drains too, then releases the locks. For
+long rolls, run inside tmux or screen so a dropped session doesn't stop it.
+
+Every shard is re-read under its shard lock and skipped if it no longer
+matches the plan (another roll or a failover changed it); rerun to replan.
 
 Examples:
   hammerdown roll --limit 'users/ALL|teams/ALL' --workers 32
@@ -159,12 +164,21 @@ func cmdRoll(args []string) error {
 
 func handleSignals(b *roll.Batch, abort context.CancelCauseFunc) {
 	sigs := make(chan os.Signal, 3)
-	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
+	// With the terminal gone, writes to stdout/stderr must fail quietly
+	// rather than kill the process mid-failover.
+	signal.Ignore(syscall.SIGPIPE)
 
 	for i := 1; ; i++ {
 		s := <-sigs
 		switch i {
 		case 1:
+			if s == syscall.SIGHUP {
+				log.Printf("received %s (terminal gone?): draining - in-flight operations finish, locks are released", s)
+				b.Drain(fmt.Errorf("%w: received %s", errInterrupted, s))
+
+				continue
+			}
 			log.Printf("received %s: draining - in-flight operations finish, nothing new starts (again to abort)", s)
 			b.Drain(fmt.Errorf("%w: received %s", errInterrupted, s))
 		case 2:

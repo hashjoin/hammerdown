@@ -28,6 +28,7 @@ Usage:
 Commands:
   report     fleet state: counts by state, Keyspace:Build table, build matrix
   roll       restart RestartWait nodes shard by shard (dry-run by default)
+  unlock     show who holds a lock; release it only if its holder is gone
   sim        manage the simulated 11,000-node demo fleet (init, stage)
   backends   list compiled-in backends
   version    print version
@@ -67,6 +68,8 @@ func run(args []string) int {
 		err = cmdReport(args[1:])
 	case "roll":
 		err = cmdRoll(args[1:])
+	case "unlock":
+		err = cmdUnlock(args[1:])
 	case "sim":
 		err = cmdSim(args[1:])
 	case "backends":
@@ -94,6 +97,7 @@ func run(args []string) int {
 		return exitUsage
 	default:
 		log.Printf("ERROR: %v", err)
+		explainHeld(err)
 
 		return exitFailures
 	}
