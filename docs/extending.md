@@ -131,6 +131,18 @@ Lessons from running this pattern on a ~11,000-tablet fleet:
   how you break replication for a whole shard.
 - **Take the same shard lock your other automation takes** (replacements,
   resharding, schema changes), not a private one.
+- **Make the lock expire with its holder.** Back the process lock with a
+  lease (an etcd lease, a Consul session, a topo lock with a TTL), so a dead
+  roll's lock goes away on its own and nobody has to decide at 4 a.m.
+  whether to delete it. If yours can outlive its holder, implement
+  `lock.Breaker` so `hammerdown unlock` can check the holder and keep a record.
+- **Implement `ShardNodes`.** hammerdown re-reads the shard (from the topo
+  server, for Vitess) under its lock and before every restart and failover.
+  It refuses to touch a tablet that became a primary since the plan was
+  made. One `GetTablets` per shard keeps that cheap.
+- **Run it where a dropped session can't kill it.** `tmux` or `screen` on the
+  jump box. Without one, a hangup still drains cleanly and releases the
+  locks, but the roll stops.
 - **gRPC keepalives.** Long rolls with many concurrent streams can trip
   server-side ping limits; set client keepalive to something polite (20s+).
 - **Explicit workers beat ratios.** "64 shards at a time" is a number you

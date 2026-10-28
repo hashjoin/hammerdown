@@ -81,6 +81,15 @@ pager is real:
 - **Stop cleanly.** `--stop-at 90m`, `--blackout 06:00-11:00`, or Ctrl-C:
   in-flight work finishes, locks are released, nothing new starts.
   Run the same command again to resume.
+- **Never act on a stale plan.** A plan is a snapshot. Every shard is
+  re-read under its shard lock, and again right before every restart and
+  failover. If anything changed (another roll, another operator, an
+  automatic failover), the shard is skipped untouched. Rerun to replan.
+- **A lock never asks you whether its holder is dead.** If the holder is
+  still running, `hammerdown roll` and `hammerdown unlock` say so and refuse.
+  They release a lock only when its holder is provably gone, and record who
+  released it and why. A dropped SSH session drains the roll and releases
+  its locks.
 
 ## Quick start
 
@@ -140,7 +149,15 @@ and `--json` for scripts (and for Claude).
 | `--yes` | false | skip the "type hammerdown to continue" prompt |
 
 Ctrl-C once drains (in-flight operations finish, nothing new starts). Twice
-aborts in-flight operations. Three times exits immediately.
+aborts in-flight operations. Three times exits immediately. A hangup (your
+SSH session dropped) drains too; run long rolls inside `tmux` or `screen`.
+
+**"lock is held"?** Don't delete anything. Run `hammerdown unlock` with the
+same backend flags. It shows who holds the lock and whether that process is
+running. It releases the lock only with `--reason`, and only if the holder
+is gone: a dead pid on this host, or a stale heartbeat on another host
+confirmed with `--confirm-host <that host>`. There is no `--force`. Every
+release goes to `unlock.log`.
 
 ## Make it yours
 
@@ -160,7 +177,9 @@ func backends() []backend.Factory {
 
 A backend provides an `Inventory` (what's out there), a `Processor` (how to
 roll one shard), a `Locker` (locks your other automation respects) and
-optional `Guards` (per-shard pre-flight checks). For any primary/replica
+optional `Guards` (per-shard pre-flight checks). If your inventory can read
+one shard cheaply, implement `fleet.ShardInventory` too: hammerdown re-reads
+every shard before touching it. For any primary/replica
 system the bundled `roll.LeaderAware` processor already does the hard part;
 you implement two methods:
 
@@ -214,7 +233,7 @@ cmd/hammerdown/   CLI; backends.go is the injection point
 fleet/            Node model + Inventory interface
 filter/           keyspace/shard Spec parser + node predicates
 roll/             scheduler (Batch), LeaderAware processor, NodeOps, Window
-lock/             Locker interface + Memory and Dir implementations
+lock/             Locker / Breaker interfaces + Memory and Dir implementations
 report/           ASCII and JSON reports
 backend/          Backend + Factory interfaces
 backend/sim/      11,000-node simulated fleet (default)
