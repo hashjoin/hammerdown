@@ -2,6 +2,7 @@ package roll
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"sort"
@@ -32,6 +33,10 @@ type NodeOps interface {
 type ChooseFunc func(primary *fleet.Node, eligible []*fleet.Node) *fleet.Node
 
 // LeaderAware is the bundled Processor for primary/replica shards:
+//
+// Before every restart and the failover it re-reads the shard (when the
+// batch has a Refresher) and stops the shard with ErrStale if any role
+// changed underneath it.
 //
 //  1. restart the replica targets one by one (new build lands on them first);
 //  2. if any replica failed, leave the primary alone;
@@ -64,6 +69,9 @@ func (p *LeaderAware) ProcessShard(ctx context.Context, job *Job) error {
 		}
 
 		if err := p.restart(ctx, job, n, "replica"); err != nil {
+			if errors.Is(err, ErrStale) {
+				return err
+			}
 			if stopped(ctx, job) {
 				return fmt.Errorf("stopped at %s: %w", n, err)
 			}
@@ -111,6 +119,9 @@ func (p *LeaderAware) ProcessShard(ctx context.Context, job *Job) error {
 
 	job.Logf("planned failover %s -> %s (%d eligible)", primary, to.Host, len(eligible))
 	if !job.DryRun {
+		if err := job.CheckRoles(ctx); err != nil {
+			return err
+		}
 		if err := p.Ops.Failover(ctx, job.Shard, primary, to); err != nil {
 			if ctx.Err() != nil {
 				return fmt.Errorf("aborted during failover of %s: %w", primary, err)
@@ -122,6 +133,9 @@ func (p *LeaderAware) ProcessShard(ctx context.Context, job *Job) error {
 	}
 
 	if err := p.restart(ctx, job, primary, "demoted primary"); err != nil {
+		if errors.Is(err, ErrStale) {
+			return err
+		}
 		if stopped(ctx, job) {
 			return fmt.Errorf("stopped at demoted primary %s: %w", primary, err)
 		}
@@ -131,7 +145,10 @@ func (p *LeaderAware) ProcessShard(ctx context.Context, job *Job) error {
 	return nil
 }
 
-// restart: drain check -> jitter -> drain check -> Ops.Restart.
+// restart: drain check -> jitter -> drain check -> re-read roles ->
+// Ops.Restart. The re-read is the last word: if n (or anything else in the
+// shard) changed role since this worker last looked - n "became a primary" -
+// it returns ErrStale and n is not touched.
 func (p *LeaderAware) restart(ctx context.Context, job *Job, n *fleet.Node, what string) error {
 	if err := job.Stopped(); err != nil {
 		return err
@@ -146,6 +163,9 @@ func (p *LeaderAware) restart(ctx context.Context, job *Job, n *fleet.Node, what
 		return err
 	}
 	if err := job.Stopped(); err != nil {
+		return err
+	}
+	if err := job.CheckRoles(ctx); err != nil {
 		return err
 	}
 

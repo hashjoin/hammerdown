@@ -69,6 +69,17 @@ type Inventory interface {
 	Nodes(ctx context.Context) ([]*Node, error)
 }
 
+// ShardInventory is optionally implemented by an Inventory that can read a
+// single shard cheaply (one topo or CMDB call instead of the whole fleet).
+//
+// hammerdown re-reads every shard after taking its shard lock, and again
+// before each node operation, so it never acts on a plan another operator,
+// another hammerdown or a failover has made stale. Without ShardNodes
+// those re-reads list the whole fleet and filter: correct, just slower.
+type ShardInventory interface {
+	ShardNodes(ctx context.Context, keyspace, shard string) ([]*Node, error)
+}
+
 // InventoryFunc adapts a function to the Inventory interface.
 type InventoryFunc func(ctx context.Context) ([]*Node, error)
 

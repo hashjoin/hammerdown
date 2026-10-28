@@ -129,6 +129,7 @@ func cmdRoll(args []string) error {
 
 	b.Processor = be.Processor()
 	b.Locker = be.Locker()
+	b.Refresher = roll.InventoryRefresher(be.Inventory())
 	b.Guards = be.Guards()
 	b.Log = log.New(os.Stderr, "", logFlags)
 	b.LockReason = "hammerdown roll by " + whoami()

@@ -16,6 +16,10 @@ type Shard struct {
 	// Members are all nodes of the shard, selected or not. Processors use
 	// them to find failover candidates that are already on the target build.
 	Members []*fleet.Node
+
+	// planned is Members as they looked when the plan was made; the batch
+	// compares a fresh read of the shard against it before touching it.
+	planned map[string]view
 }
 
 // Key is "keyspace/shard".
@@ -52,6 +56,7 @@ func Plan(nodes []*fleet.Node, f *filter.Filter) []*Shard {
 
 			return s.Targets[i].Name < s.Targets[j].Name
 		})
+		s.planned = snapshot(s.Members)
 		shards = append(shards, s)
 	}
 
