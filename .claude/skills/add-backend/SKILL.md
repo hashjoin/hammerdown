@@ -26,11 +26,17 @@ all they need.
    `Open` returning a `backend.Backend`.
 2. Inventory: map source records to `fleet.Node`. Set `State` to
    `fleet.StateRestartWait` when Running != Target, `StateDrained` when out
-   of service.
+   of service. If one shard can be read cheaply (one topo/API call), also
+   implement `fleet.ShardInventory` (`ShardNodes`): hammerdown re-reads the
+   shard under its lock and before every node operation, and refuses to act
+   if roles changed. Reads must return fresh data, not a cached snapshot.
 3. Processor: `&roll.LeaderAware{Ops: ops, Jitter: ...}` where `ops`
    implements `roll.NodeOps`. Restart and Failover must BLOCK until done and
    update node fields on success.
-4. Locker: wrap the system's lock; otherwise `&lock.Dir{Path: ...}`.
+4. Locker: wrap the system's lock, ideally a lease that expires with its
+   holder; otherwise `&lock.Dir{Path: ...}`. Never return an error that
+   tells the operator to delete a lock. A lock that can outlive its holder
+   implements `lock.Breaker` (see `lock.Dir`).
 5. Register in `cmd/hammerdown/backends.go`.
 
 ## 3. Test
@@ -40,6 +46,9 @@ all they need.
   replicas -> failover -> demoted primary.
 - Assert dry run makes zero external calls.
 - Assert locks are released after success and after a failure.
+- Assert a stale plan is refused: change a role in the fake between `Plan`
+  and `Run` and expect `roll.ErrStale` with no node operations (see
+  `roll/stale_test.go`).
 - `go vet ./... && go test -race ./...`
 
 ## 4. Hand-off

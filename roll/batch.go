@@ -6,6 +6,9 @@
 //   - at most Workers shards are in flight, fleet-wide; optionally at most
 //     KeyspaceWorkers per keyspace;
 //   - one worker owns a shard end to end, under a shard lock;
+//   - with a Refresher, the shard is re-read under that lock and skipped
+//     untouched if it no longer matches the plan (ErrStale): a plan is a
+//     snapshot, and acting on a stale one restarts primaries;
 //   - the whole batch runs under a process lock that is re-validated on a
 //     ticker; losing it aborts the batch;
 //   - fail-fast is exact: the failure that crosses MaxPrimaryFailures /
@@ -90,6 +93,7 @@ var (
 type Batch struct {
 	Processor Processor
 	Locker    lock.Locker // nil = no locking (not recommended outside demos)
+	Refresher Refresher   // nil = trust the plan (not recommended outside demos)
 	Guards    []Guard
 	Log       Logger
 
@@ -185,6 +189,11 @@ func (b *Batch) Run(parent context.Context, shards []*Shard) (*Result, error) {
 	}
 
 	b.res = &Result{Started: b.clock(), Planned: Stats(shards)}
+	for _, s := range shards {
+		if s.planned == nil { // built by hand, not by Plan
+			s.planned = snapshot(s.Members)
+		}
+	}
 	b.primaryFails, b.replicaFails = 0, 0
 
 	// ctx (the parent) is handed to node operations and only dies on a hard
@@ -406,6 +415,14 @@ func (b *Batch) runShard(ctx context.Context, s *Shard, worker int) {
 				job.Logf("WARNING: releasing %s: %v", key, err)
 			}
 		}()
+	}
+
+	// Under the lock, before anything else: is this still the shard we
+	// planned? (Dry runs read too; reading touches nothing.)
+	if err := b.refresh(ctx, s); err != nil {
+		shardErr(err)
+
+		return
 	}
 
 	if err := b.Processor.ProcessShard(ctx, job); err != nil {

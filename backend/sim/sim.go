@@ -278,12 +278,31 @@ type simBackend struct {
 	locker *lock.Memory
 	cursed map[string]bool
 
-	mu  sync.Mutex
-	rnd *rand.Rand
+	mu      sync.Mutex
+	rnd     *rand.Rand
+	byShard map[string][]*fleet.Node // keyspace/shard -> nodes, built on first ShardNodes
 }
 
-func (b *simBackend) Inventory() fleet.Inventory {
-	return fleet.InventoryFunc(func(context.Context) ([]*fleet.Node, error) { return b.fleet.Nodes, nil })
+func (b *simBackend) Inventory() fleet.Inventory { return simInventory{b} }
+
+// simInventory implements fleet.ShardInventory so the per-shard re-reads
+// don't scan 11,000 nodes each time.
+type simInventory struct{ b *simBackend }
+
+func (i simInventory) Nodes(context.Context) ([]*fleet.Node, error) { return i.b.fleet.Nodes, nil }
+
+func (i simInventory) ShardNodes(_ context.Context, keyspace, shard string) ([]*fleet.Node, error) {
+	i.b.mu.Lock()
+	defer i.b.mu.Unlock()
+
+	if i.b.byShard == nil {
+		i.b.byShard = map[string][]*fleet.Node{}
+		for _, n := range i.b.fleet.Nodes {
+			i.b.byShard[n.ShardKey()] = append(i.b.byShard[n.ShardKey()], n)
+		}
+	}
+
+	return i.b.byShard[keyspace+"/"+shard], nil
 }
 
 func (b *simBackend) Processor() roll.Processor { return &roll.LeaderAware{Ops: b} }

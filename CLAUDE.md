@@ -29,7 +29,9 @@ make demo        # the above, end to end
 | `roll/plan.go` | `Plan`: nodes + filter -> sorted `[]*Shard`, replicas before primary |
 | `roll/batch.go` | `Batch.Run`: worker slots, per-keyspace cap, locks, guards, fail-fast, drain, stop-at, blackout |
 | `roll/leader.go` | `LeaderAware` processor + `NodeOps` (Restart, Failover) |
-| `lock/lock.go` | `Locker`/`Lock` + `Memory` and `Dir` |
+| `roll/refresh.go` | `Refresher`, `ErrStale`, `Job.CheckRoles`: re-read shards before acting |
+| `lock/lock.go` | `Locker`/`Lock`/`Breaker`, `HeldError` + `Memory` and `Dir` (pid liveness, heartbeat, `unlock.log`) |
+| `cmd/hammerdown/unlock.go` | `unlock`: inspect a lock, release only a provably gone holder |
 | `report/report.go` | ASCII + JSON reports |
 | `backend/backend.go` | `Backend` + `Factory` interfaces |
 | `backend/sim` | simulated 11,000-node fleet; reference backend |
@@ -54,7 +56,15 @@ make demo        # the above, end to end
 6. **Standard library only.** No new modules without a very good reason
    (backends for specific systems may need a client library: keep those in
    their own package so the core stays dependency-free).
-7. **Output stays greppable.** Logs go to stderr via `job.Logf` (prefix
+7. **Re-read before you act.** A plan is a snapshot. The batch re-reads each
+   shard under its lock (`Batch.Refresher`, `ErrStale`); a custom Processor
+   calls `job.CheckRoles(ctx)` right before each node operation and returns
+   its error. Never restart a node on the strength of the plan's role alone.
+8. **A lock never asks the operator to judge its holder.** Error messages
+   don't say "remove if stale". Locks that can outlive their holder
+   implement `lock.Breaker`: check liveness, refuse a running holder,
+   record every release.
+9. **Output stays greppable.** Logs go to stderr via `job.Logf` (prefix
    `( dry-run=.. ) ( worker=NN ) ...`); reports go to stdout as fixed-width ASCII.
 
 ## Recipe: add a backend
@@ -65,7 +75,9 @@ make demo        # the above, end to end
 2. `Open` returns a type implementing `backend.Backend`:
    - `Inventory()` -> `fleet.InventoryFunc` that maps your source of truth
      (topo server, CMDB, cloud API, Consul) to `[]*fleet.Node`. Map "needs a
-     restart" to `State: fleet.StateRestartWait`.
+     restart" to `State: fleet.StateRestartWait`. Also implement
+     `fleet.ShardInventory` (`ShardNodes`) if one shard can be read cheaply:
+     it is called under every shard lock and before every node operation.
    - `Processor()` -> `&roll.LeaderAware{Ops: yourOps, Jitter: ...}` for
      primary/replica systems, or your own `roll.Processor` otherwise.
    - `Locker()` -> a lock your other automation honours (Consul, etcd, topo).
